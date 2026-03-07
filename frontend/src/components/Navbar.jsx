@@ -10,7 +10,7 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (query.trim()) {
-      navigate(`/?search=${encodeURIComponent(query.trim())}`)
+      navigate(`/discover?search=${encodeURIComponent(query.trim())}`)
     }
   }
 
@@ -38,7 +38,7 @@ export default function Navbar() {
           Hi, <span className="text-white font-medium">{user?.username}</span>
         </div>
         <button
-          onClick={logout}
+          onClick={() => { logout(); navigate('/') }}
           className="text-xs text-gray-500 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"
         >
           Sign out

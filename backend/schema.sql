@@ -17,21 +17,25 @@ CREATE TABLE IF NOT EXISTS genres (
   name TEXT NOT NULL
 );
 
--- Movies table
+-- Movies / TV Shows table (unified media table)
 CREATE TABLE IF NOT EXISTS movies (
-  id INT PRIMARY KEY, -- TMDB movie ID
-  title TEXT NOT NULL,
+  id INT PRIMARY KEY,          -- TMDB ID
+  title TEXT NOT NULL,         -- movie title or TV show name
   overview TEXT,
   poster_path TEXT,
   backdrop_path TEXT,
-  release_date DATE,
+  release_date DATE,           -- movie release_date or TV first_air_date
   vote_average FLOAT,
   vote_count INT,
   popularity FLOAT,
   language TEXT,
   adult BOOLEAN,
+  media_type TEXT DEFAULT 'movie', -- 'movie' | 'tv'
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Migration for existing databases: add media_type if not exists
+ALTER TABLE movies ADD COLUMN IF NOT EXISTS media_type TEXT DEFAULT 'movie';
 
 -- Movie Genres junction table
 CREATE TABLE IF NOT EXISTS movie_genres (

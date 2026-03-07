@@ -3,86 +3,99 @@ import { useLocation } from 'react-router-dom'
 import api from '../lib/api'
 import MovieCard from '../components/MovieCard'
 
-const GENRES = [
-  { id: 28, name: 'Action' }, { id: 35, name: 'Comedy' }, { id: 18, name: 'Drama' },
-  { id: 27, name: 'Horror' }, { id: 878, name: 'Sci-Fi' }, { id: 10749, name: 'Romance' },
-  { id: 12, name: 'Adventure' }, { id: 16, name: 'Animation' }, { id: 53, name: 'Thriller' },
-  { id: 14, name: 'Fantasy' },
+const MEDIA_TABS = [
+  { id: 'all',   label: '🌐 All'      },
+  { id: 'movie', label: '🎬 Movies'   },
+  { id: 'tv',    label: '📺 TV Shows' },
+  { id: 'anime', label: '🎌 Anime'    },
 ]
 
-const SkeletonCard = () => (
-  <div className="skeleton aspect-[2/3] rounded-xl" />
-)
+const SkeletonCard = () => <div className="skeleton aspect-[2/3] rounded-xl" />
 
 export default function HomePage() {
-  const [recs, setRecs]             = useState([])
-  const [trending, setTrending]     = useState([])
-  const [searchResults, setSearch]  = useState([])
-  const [activeGenre, setActiveGenre] = useState(null)
-  const [loading, setLoading]       = useState(true)
-  const [searchLoading, setSearchLoading] = useState(false)
-  const location = useLocation()
+  const [content, setContent]   = useState([])
+  const [trending, setTrending]   = useState([])
+  const [searchResults, setSearch]= useState([])
+  const [searchSource, setSearchSource] = useState(null)
+  const [genres, setGenres]       = useState([])
+  const [activeGenre, setActiveGenre]   = useState(null)
+  const [mediaType, setMediaType]       = useState('all')
+  const [loading, setLoading]           = useState(true)
+
+  const location    = useLocation()
   const searchQuery = new URLSearchParams(location.search).get('search')
 
+  // ── Load genres from API ───────────────────────────────────────────────────
+  useEffect(() => {
+    api.get('/genres').then(res => setGenres(res.data)).catch(console.error)
+  }, [])
+
+  // ── Watchlist helper ───────────────────────────────────────────────────────
   const addToWatchlist = async (movieId) => {
-    try {
-      await api.post('/watchlist', { movieId })
-    } catch (err) {
-      console.error('Watchlist error:', err)
-    }
+    try { await api.post('/watchlist', { movieId }) }
+    catch (err) { console.error('Watchlist error:', err) }
   }
 
-  // Load recommendations and trending
+  // ── Load recommendations + trending ───────────────────────────────────────
   useEffect(() => {
+    if (searchQuery) return
     const load = async () => {
       setLoading(true)
       try {
-        const [recsRes, trendRes] = await Promise.all([
-          api.get('/recommendations'),
-          api.get('/recommendations/trending'),
-        ])
-        setRecs(recsRes.data)
+        const typeParam = mediaType !== 'all' ? `?type=${mediaType}&limit=24` : `?limit=24`
+        const trendRes = await api.get(`/recommendations/trending${typeParam}`)
+        setContent(trendRes.data)
         setTrending(trendRes.data)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+      } catch (err) { console.error(err) }
+      finally { setLoading(false) }
     }
     load()
-  }, [])
+  }, [mediaType, searchQuery])
 
-  // Handle search
+  // ── Handle search ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!searchQuery) { setSearch([]); return }
+    if (!searchQuery) { setSearch([]); setSearchSource(null); return }
     const fetchSearch = async () => {
-      setSearchLoading(true)
+      setLoading(true)
       try {
-        const res = await api.get(`/movies/search?q=${encodeURIComponent(searchQuery)}`)
-        setSearch(res.data)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setSearchLoading(false)
-      }
+        const typeParam = mediaType !== 'all' ? `&type=${mediaType}` : ''
+        const res = await api.get(`/movies/search?q=${encodeURIComponent(searchQuery)}${typeParam}`)
+        setSearch(res.data.results || res.data)
+        setSearchSource(res.data.source || 'local')
+      } catch (err) { console.error(err) }
+      finally { setLoading(false) }
     }
     fetchSearch()
-  }, [searchQuery])
+  }, [searchQuery, mediaType])
 
+  // ── Genre filter ───────────────────────────────────────────────────────────
   const filterByGenre = useCallback(async (genreId) => {
     setActiveGenre(genreId)
-    if (!genreId) return
+    if (!genreId) {
+      // Reset: reload default recs
+      setLoading(true)
+      try {
+        const [recsRes] = await Promise.all([api.get('/recommendations')])
+        setRecs(recsRes.data)
+      } catch (err) { console.error(err) }
+      finally { setLoading(false) }
+      return
+    }
     setLoading(true)
     try {
-      const res = await api.get(`/movies?genreId=${genreId}&limit=20`)
-      setRecs(res.data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+      const typeParam = mediaType !== 'all' ? `&type=${mediaType}` : ''
+      const res = await api.get(`/movies?genreId=${genreId}&limit=24${typeParam}`)
+      setContent(res.data)
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
+  }, [mediaType])
 
+  const handleMediaTypeChange = (type) => {
+    setMediaType(type)
+    setActiveGenre(null)
+  }
+
+  // ── Subcomponent ───────────────────────────────────────────────────────────
   const MovieGrid = ({ movies, label }) => (
     <section className="mb-10">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -94,36 +107,56 @@ export default function HomePage() {
           {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : movies.length === 0 ? (
-        <p className="text-gray-500 text-sm">No movies found.</p>
+        <p className="text-gray-500 text-sm py-8">No content found. Try a different filter.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {movies.map(m => (
-            <MovieCard key={m.id} movie={m} onWatchlist={addToWatchlist} />
-          ))}
+          {movies.map(m => <MovieCard key={m.id} movie={m} onWatchlist={addToWatchlist} />)}
         </div>
       )}
     </section>
   )
 
+  // ── Search results view ────────────────────────────────────────────────────
   if (searchQuery) {
     return (
       <div className="animate-fade-in">
+        {searchSource === 'tmdb' && (
+          <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg text-blue-300 text-sm flex items-center gap-2">
+            <span>🌐</span>
+            <span>Showing live results from TMDB — some items may not be in the local database</span>
+          </div>
+        )}
         <MovieGrid movies={searchResults} label={`Results for "${searchQuery}"`} />
       </div>
     )
   }
 
+  // ── Main view ──────────────────────────────────────────────────────────────
   return (
     <div className="animate-fade-in">
-      {/* Genre filter strip */}
+      {/* Media type tabs */}
+      <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-6 w-fit">
+        {MEDIA_TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => handleMediaTypeChange(tab.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+              ${mediaType === tab.id ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Genre filter strip — loaded dynamically from API */}
       <div className="flex gap-2 mb-8 overflow-x-auto scrollbar-hide pb-1">
         <button
           onClick={() => filterByGenre(null)}
           className={`badge shrink-0 cursor-pointer transition-all ${!activeGenre ? 'bg-primary text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
         >
-          All
+          All Genres
         </button>
-        {GENRES.map(g => (
+        {genres.map(g => (
           <button
             key={g.id}
             onClick={() => filterByGenre(g.id)}
@@ -134,8 +167,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      <MovieGrid movies={recs} label="Recommended for You" />
-      {!activeGenre && <MovieGrid movies={trending} label="Trending Now" />}
+      <MovieGrid movies={content} label={activeGenre ? 'Filtered Results' : `Trending — ${MEDIA_TABS.find(t => t.id === mediaType)?.label ?? 'All'}`} />
     </div>
   )
 }
