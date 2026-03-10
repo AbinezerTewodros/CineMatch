@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 import api from '../lib/api'
 
 const AuthContext = createContext(null)
@@ -17,9 +17,7 @@ export const AuthProvider = ({ children }) => {
       return { success: true }
     } catch (err) {
       return { success: false, error: err.response?.data?.error || 'Login failed' }
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const register = async (email, password, username) => {
@@ -32,9 +30,14 @@ export const AuthProvider = ({ children }) => {
       return { success: true }
     } catch (err) {
       return { success: false, error: err.response?.data?.error || 'Registration failed' }
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
+  }
+
+  // Call after profile update so sidebar/navbar reflect changes immediately
+  const updateUser = (partial) => {
+    const merged = { ...user, ...partial }
+    localStorage.setItem('user', JSON.stringify(merged))
+    setUser(merged)
   }
 
   const logout = () => {
@@ -44,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

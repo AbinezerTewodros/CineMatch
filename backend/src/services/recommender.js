@@ -1,19 +1,16 @@
-const pool = require('../config/db');
+const pool  = require('../config/db');
 const redis = require('../config/redis');
 
 /**
- * Phase 1 Recommendation Logic:
+ * Personalized Recommendation Logic:
  * 1. Get user preferences (genres, min_rating)
- * 2. Get user's high-rated movies (rating >= 7)
- * 3. Extract genres from high-rated movies
- * 4. Combine with preferred genres
- * 5. Query movies with those genres, filtered by min_rating
- * 6. Exclude already rated/watchlisted movies
- * 7. Order by popularity
+ * 2. Get genres from high-rated movies (rating >= 7)
+ * 3. Combine, query matching movies
+ * 4. Exclude already-rated, optionally filter media_type
  */
-const getPersonalizedRecommendations = async (userId) => {
-  const cacheKey = `recs:${userId}`;
-  
+const getPersonalizedRecommendations = async (userId, mediaType = null) => {
+  const cacheKey = `recs:${userId}:${mediaType || 'all'}`;
+
   // Try cache first
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
@@ -22,9 +19,9 @@ const getPersonalizedRecommendations = async (userId) => {
   const prefResult = await pool.query('SELECT * FROM user_preferences WHERE user_id = $1', [userId]);
   const prefs = prefResult.rows[0] || { preferred_genres: [], min_rating: 6.0 };
 
-  // 2. Get high-rated movie genres
+  // 2. Get genres from high-rated movies
   const ratedGenresResult = await pool.query(
-    `SELECT DISTINCT mg.genre_id 
+    `SELECT DISTINCT mg.genre_id
      FROM user_ratings ur
      JOIN movie_genres mg ON ur.movie_id = mg.movie_id
      WHERE ur.user_id = $1 AND ur.rating >= 7`,
@@ -35,7 +32,7 @@ const getPersonalizedRecommendations = async (userId) => {
   // 3. Combine genres
   const allTargetGenres = [...new Set([...(prefs.preferred_genres || []), ...ratedGenres])];
 
-  // 4. Build Query
+  // 4. Build query
   let query = `
     SELECT m.*, array_agg(g.name) as genres
     FROM movies m
@@ -46,23 +43,31 @@ const getPersonalizedRecommendations = async (userId) => {
   const params = [prefs.min_rating || 6.0];
 
   if (allTargetGenres.length > 0) {
-    query += ` AND m.id IN (SELECT movie_id FROM movie_genres WHERE genre_id = ANY($2))`;
     params.push(allTargetGenres);
+    query += ` AND m.id IN (SELECT movie_id FROM movie_genres WHERE genre_id = ANY($${params.length}))`;
   }
 
-  // Exclude seen movies
-  query += ` 
-    AND m.id NOT IN (SELECT movie_id FROM user_ratings WHERE user_id = $${params.length + 1})
+  // Media type filter
+  if (mediaType === 'movie' || mediaType === 'tv') {
+    params.push(mediaType);
+    query += ` AND m.media_type = $${params.length}`;
+  } else if (mediaType === 'anime') {
+    query += ` AND m.id IN (SELECT movie_id FROM movie_genres WHERE genre_id = 16)`;
+  }
+
+  // Exclude seen
+  params.push(userId);
+  query += `
+    AND m.id NOT IN (SELECT movie_id FROM user_ratings WHERE user_id = $${params.length})
     GROUP BY m.id
     ORDER BY m.popularity DESC
-    LIMIT 20
+    LIMIT 36
   `;
-  params.push(userId);
 
   const result = await pool.query(query, params);
-  
-  // Cache for 1 hour
-  await redis.setex(cacheKey, 3600, JSON.stringify(result.rows));
+
+  // Cache for 30 min (shorter than before since type varies)
+  await redis.setex(cacheKey, 1800, JSON.stringify(result.rows));
 
   return result.rows;
 };
@@ -81,7 +86,4 @@ const getSimilarMovies = async (movieId) => {
   return result.rows;
 };
 
-module.exports = {
-  getPersonalizedRecommendations,
-  getSimilarMovies,
-};
+module.exports = { getPersonalizedRecommendations, getSimilarMovies };

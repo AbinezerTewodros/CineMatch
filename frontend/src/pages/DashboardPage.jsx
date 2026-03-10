@@ -102,7 +102,8 @@ export default function DashboardPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {watchlist.map(m => (
-                  <MovieCard key={m.id} movie={m} onWatchlist={removeFromWatchlist} />
+                  <MovieCard key={m.id} movie={m} onWatchlist={removeFromWatchlist} mode="remove" />
+                ))}
                 ))}
               </div>
             )

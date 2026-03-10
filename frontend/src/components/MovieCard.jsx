@@ -1,12 +1,11 @@
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 
 const TMDB_IMAGE = 'https://image.tmdb.org/t/p/w500'
 
-// Derive badge based on media_type and genre list
 function getMediaBadge(movie) {
   const isTV    = movie.media_type === 'tv'
   const genreIds = movie.genre_ids || []
-  // Check for Animation genre (id=16) in either format
   const isAnime = genreIds.includes(16) ||
     (Array.isArray(movie.genres) && movie.genres.some(g =>
       g === 'Animation' || g?.name === 'Animation'
@@ -18,7 +17,11 @@ function getMediaBadge(movie) {
   return               { label: 'FILM',   cls: 'bg-primary/90 text-white'    }
 }
 
-export default function MovieCard({ movie, onWatchlist }) {
+// mode = 'add' (default) | 'remove'
+export default function MovieCard({ movie, onWatchlist, mode = 'add' }) {
+  const [feedback, setFeedback] = useState(null) // null | 'added' | 'removed'
+  const cardRef = useRef(null)
+
   const posterUrl = movie.poster_path
     ? `${TMDB_IMAGE}${movie.poster_path}`
     : `https://placehold.co/300x450/1a1a2e/666666?text=${encodeURIComponent(movie.title?.slice(0, 20) ?? '')}`
@@ -27,11 +30,19 @@ export default function MovieCard({ movie, onWatchlist }) {
   const ratingNum   = Number(movie.vote_average) || 0
   const ratingColor = ratingNum >= 7 ? 'text-green-400' : ratingNum >= 5 ? 'text-yellow-400' : 'text-red-400'
   const badge       = getMediaBadge(movie)
-
   const detailPath  = `/movie/${movie.id}${movie.media_type === 'tv' ? '?type=tv' : ''}`
 
+  const handleWatchlist = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onWatchlist(movie.id)
+    const next = mode === 'remove' ? 'removed' : 'added'
+    setFeedback(next)
+    setTimeout(() => setFeedback(null), 1800)
+  }
+
   return (
-    <div className="movie-card">
+    <div className="movie-card relative" ref={cardRef}>
       <Link to={detailPath}>
         <img
           src={posterUrl}
@@ -40,7 +51,6 @@ export default function MovieCard({ movie, onWatchlist }) {
           loading="lazy"
         />
 
-        {/* Dark gradient overlay — triggered by .movie-card:hover .overlay-gradient in CSS */}
         <div className="overlay-gradient" />
 
         {/* Rating badge — top right */}
@@ -54,14 +64,15 @@ export default function MovieCard({ movie, onWatchlist }) {
         </div>
 
         {/* Hover info strip — bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 transition-all duration-300"
+        <div
+          className="absolute bottom-0 left-0 right-0 p-3 transition-all duration-300"
           style={{ transform: 'translateY(4px)', opacity: 0 }}
           ref={el => {
             if (!el) return
             const card = el.closest('.movie-card')
             if (!card) return
-            const show  = () => { el.style.opacity = '1'; el.style.transform = 'translateY(0)' }
-            const hide  = () => { el.style.opacity = '0'; el.style.transform = 'translateY(4px)' }
+            const show = () => { el.style.opacity = '1'; el.style.transform = 'translateY(0)' }
+            const hide = () => { el.style.opacity = '0'; el.style.transform = 'translateY(4px)' }
             card.addEventListener('mouseenter', show)
             card.addEventListener('mouseleave', hide)
           }}
@@ -75,23 +86,45 @@ export default function MovieCard({ movie, onWatchlist }) {
         </div>
       </Link>
 
-      {/* Watchlist button — bottom right, visible on hover via CSS */}
+      {/* Watchlist button — shows on hover */}
       {onWatchlist && (
         <button
-          onClick={e => { e.preventDefault(); onWatchlist(movie.id) }}
-          title="Add to watchlist"
-          className="watchlist-btn absolute bottom-2 right-2 w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm text-white hover:bg-primary transition-colors flex items-center justify-center text-base font-bold opacity-0 transition-opacity duration-300"
-          style={{ opacity: 0 }}
+          onClick={handleWatchlist}
+          title={mode === 'remove' ? 'Remove from watchlist' : 'Add to watchlist'}
+          className={`watchlist-btn absolute bottom-2 right-2 w-7 h-7 rounded-full backdrop-blur-sm
+            text-white flex items-center justify-center text-base font-bold
+            transition-all duration-200
+            ${feedback === 'added'   ? 'bg-green-600 scale-110 opacity-100' :
+              feedback === 'removed' ? 'bg-red-600 scale-110 opacity-100'   :
+              mode === 'remove'      ? 'bg-black/70 hover:bg-red-600'       :
+                                       'bg-black/70 hover:bg-primary'}
+          `}
+          style={{ opacity: feedback ? 1 : 0 }}
           ref={el => {
             if (!el) return
             const card = el.closest('.movie-card')
             if (!card) return
-            card.addEventListener('mouseenter', () => { el.style.opacity = '1' })
-            card.addEventListener('mouseleave', () => { el.style.opacity = '0' })
+            card.addEventListener('mouseenter', () => {
+              if (!el._feedback) el.style.opacity = '1'
+            })
+            card.addEventListener('mouseleave', () => {
+              if (!el._feedback) el.style.opacity = '0'
+            })
           }}
         >
-          +
+          {feedback === 'added'   ? '✓' :
+           feedback === 'removed' ? '✓' :
+           mode === 'remove'      ? '−' : '+'}
         </button>
+      )}
+
+      {/* Feedback toast — floats above the card */}
+      {feedback && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none
+          bg-black/90 border border-white/10 text-xs font-semibold text-white
+          px-2.5 py-1 rounded-full shadow-lg animate-fade-in whitespace-nowrap">
+          {feedback === 'added' ? '✓ Added to watchlist' : '✓ Removed'}
+        </div>
       )}
     </div>
   )

@@ -80,8 +80,66 @@ router.post('/login', async (req, res, next) => {
 // @desc    Get current user
 router.get('/me', authMiddleware, async (req, res, next) => {
   try {
-    const user = await pool.query('SELECT id, email, username, avatar_url, created_at FROM users WHERE id = $1', [req.user.id]);
+    const user = await pool.query(
+      'SELECT id, email, username, avatar_url, avatar_emoji, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
     res.json(user.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// @route   PUT /api/auth/profile
+// @desc    Update username and/or avatar_emoji
+router.put('/profile', authMiddleware, async (req, res, next) => {
+  const { username, avatar_emoji } = req.body;
+  try {
+    // Check username uniqueness if changing
+    if (username) {
+      const existing = await pool.query(
+        'SELECT id FROM users WHERE username = $1 AND id != $2', [username, req.user.id]
+      );
+      if (existing.rows.length > 0) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+    }
+
+    const updated = await pool.query(
+      `UPDATE users SET
+        username     = COALESCE($1, username),
+        avatar_emoji = COALESCE($2, avatar_emoji)
+       WHERE id = $3
+       RETURNING id, email, username, avatar_emoji, created_at`,
+      [username || null, avatar_emoji || null, req.user.id]
+    );
+    res.json(updated.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// @route   PUT /api/auth/password
+// @desc    Change password (requires current password)
+router.put('/password', authMiddleware, async (req, res, next) => {
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password) {
+    return res.status(400).json({ error: 'Both current and new password are required' });
+  }
+  if (new_password.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters' });
+  }
+  try {
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const user       = userResult.rows[0];
+
+    const isMatch = await bcrypt.compare(current_password, user.password_hash);
+    if (!isMatch) return res.status(400).json({ error: 'Current password is incorrect' });
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(new_password, salt);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.user.id]);
+    res.json({ message: 'Password updated successfully' });
   } catch (err) {
     next(err);
   }

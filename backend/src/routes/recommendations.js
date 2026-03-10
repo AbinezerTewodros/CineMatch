@@ -8,7 +8,8 @@ const router = express.Router();
 // ─── GET /api/recommendations ─────────────────────────────────────────────────
 router.get('/', authMiddleware, async (req, res, next) => {
   try {
-    const recs = await getPersonalizedRecommendations(req.user.id);
+    const { type } = req.query;
+    const recs = await getPersonalizedRecommendations(req.user.id, type || null);
     res.json(recs);
   } catch (err) {
     next(err);
@@ -16,32 +17,33 @@ router.get('/', authMiddleware, async (req, res, next) => {
 });
 
 // ─── GET /api/recommendations/trending ───────────────────────────────────────
-// ?type=movie|tv|anime|all   ?limit=N
+// ?type=movie|tv|anime|all   ?limit=N   ?page=N
 router.get('/trending', async (req, res, next) => {
-  const { type = 'all', limit = 24 } = req.query;
-  const n = Math.min(Number(limit) || 24, 100); // cap at 100
+  const { type = 'all', limit = 24, page = 1 } = req.query;
+  const n      = Math.min(Number(limit) || 24, 100);
+  const offset = (Math.max(Number(page) || 1, 1) - 1) * n;
 
   try {
     let result;
 
     if (type === 'movie' || type === 'tv') {
       result = await pool.query(
-        `SELECT * FROM movies WHERE media_type = $1 ORDER BY popularity DESC LIMIT $2`,
-        [type, n]
+        `SELECT * FROM movies WHERE media_type = $1
+         ORDER BY popularity DESC LIMIT $2 OFFSET $3`,
+        [type, n, offset]
       );
     } else if (type === 'anime') {
       result = await pool.query(
         `SELECT DISTINCT m.* FROM movies m
          JOIN movie_genres mg ON m.id = mg.movie_id
          WHERE mg.genre_id = 16
-         ORDER BY m.popularity DESC LIMIT $1`,
-        [n]
+         ORDER BY m.popularity DESC LIMIT $1 OFFSET $2`,
+        [n, offset]
       );
     } else {
-      // All types
       result = await pool.query(
-        `SELECT * FROM movies ORDER BY popularity DESC LIMIT $1`,
-        [n]
+        `SELECT * FROM movies ORDER BY popularity DESC LIMIT $1 OFFSET $2`,
+        [n, offset]
       );
     }
 

@@ -6,6 +6,8 @@ import RegisterPage        from './pages/RegisterPage'
 import HomePage            from './pages/HomePage'
 import RecommendationsPage from './pages/RecommendationsPage'
 import MovieDetailPage     from './pages/MovieDetailPage'
+import PersonPage          from './pages/PersonPage'
+import ProfilePage         from './pages/ProfilePage'
 import DashboardPage       from './pages/DashboardPage'
 import Layout              from './components/Layout'
 
@@ -33,6 +35,8 @@ const AppRoutes = () => (
       <Route path="/discover"        element={<HomePage />} />
       <Route path="/recommendations" element={<RecommendationsPage />} />
       <Route path="/movie/:id"       element={<MovieDetailPage />} />
+      <Route path="/person/:id"      element={<PersonPage />} />
+      <Route path="/profile"         element={<ProfilePage />} />
       <Route path="/dashboard"       element={<DashboardPage />} />
     </Route>
 
