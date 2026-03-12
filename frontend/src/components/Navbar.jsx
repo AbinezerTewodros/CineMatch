@@ -81,13 +81,20 @@ export default function Navbar() {
     ${active ? 'bg-primary/80 text-white' : 'text-gray-300 hover:text-white hover:bg-white/10'}`
 
   return (
-    <header className="bg-[#0d0d18]/95 backdrop-blur-md border-b border-white/8 h-14 flex items-center gap-2 px-4 shrink-0 z-40 relative">
+    <header className="bg-[#0d0d18]/95 backdrop-blur-md border-b border-white/8 h-auto min-h-[56px] flex flex-wrap items-center gap-2 px-3 py-2 sm:px-4 shrink-0 z-40 relative">
 
       {/* ── Hamburger menu (hover dropdown) ─────────────────────────────── */}
       <div className="relative shrink-0" ref={menuRef}
         onMouseEnter={onMenuEnter} onMouseLeave={onMenuLeave}>
         <button
-          className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors">
+          className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors"
+          type="button"
+          onClick={() => {
+            clearTimeout(menuTimer.current)
+            setMenuOpen(open => !open)
+          }}
+          aria-label="Open main menu"
+          aria-expanded={menuOpen}>
           <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -117,16 +124,22 @@ export default function Navbar() {
 
       {/* Logo */}
       <Link to="/discover"
-        className="text-xl font-black text-gradient shrink-0 mr-2 hover:opacity-80 transition-opacity">
+        className="text-lg sm:text-xl font-black text-gradient shrink-0 mr-2 hover:opacity-80 transition-opacity">
         CineMatch
       </Link>
 
       {/* ── Nav links ───────────────────────────────────────────────────── */}
-      <nav className="flex items-center gap-0.5">
+      <nav className="hidden md:flex items-center gap-0.5">
 
         {/* Genres — hover dropdown */}
         <div className="relative" onMouseEnter={onGenreEnter} onMouseLeave={onGenreLeave}>
-          <button className={`flex items-center gap-1 ${navLinkCls(!!activeGenreId)}`}>
+          <button
+            type="button"
+            onClick={() => {
+              clearTimeout(genreTimer.current)
+              setGenreHover(open => !open)
+            }}
+            className={`flex items-center gap-1 ${navLinkCls(!!activeGenreId)}`}>
             {activeGenreId
               ? (genres.find(g => g.id === activeGenreId)?.name || 'Genre')
               : 'Genres'}
@@ -183,7 +196,7 @@ export default function Navbar() {
       </nav>
 
       {/* ── Search ──────────────────────────────────────────────────────── */}
-      <form onSubmit={handleSearch} className="flex-1 max-w-md mx-auto">
+      <form onSubmit={handleSearch} className="flex-1 max-w-md mx-2 sm:mx-auto w-full sm:w-auto">
         <div className="relative group">
           {/* Search icon */}
           <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-primary transition-colors duration-200"
@@ -223,7 +236,7 @@ export default function Navbar() {
             border border-primary/40 flex items-center justify-center text-base leading-none shrink-0">
             {user?.avatar_emoji || '😊'}
           </div>
-          <span className="text-sm font-medium hidden md:block max-w-[100px] truncate text-gray-200">
+          <span className="text-sm font-medium hidden lg:block max-w-[100px] truncate text-gray-200">
             {user?.username}
           </span>
           <ChevronDown open={profileOpen} />

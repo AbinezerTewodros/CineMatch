@@ -190,25 +190,33 @@ export default function LandingPage() {
       {authModal && <AuthModal mode={authModal} onClose={() => setAuthModal(null)} />}
 
       {/* ── Navbar ────────────────────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4
-        bg-gradient-to-b from-black/90 via-black/50 to-transparent backdrop-blur-sm">
-        <div>
-          <span className="text-2xl font-black text-gradient">CineMatch</span>
-          <span className="text-gray-500 text-xs ml-2">AI Movie Guide</span>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/95 via-black/70 to-transparent backdrop-blur-sm">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-baseline gap-2 min-w-0">
+            <span className="text-xl sm:text-2xl font-black text-gradient whitespace-nowrap">CineMatch</span>
+            <span className="text-gray-500 text-[11px] sm:text-xs truncate">AI Movie Guide</span>
+          </div>
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => setAuthModal('login')}
+              className="text-gray-300 hover:text-white text-xs sm:text-sm transition-colors px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-white/10"
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthModal('register')}
+              className="btn-primary text-xs sm:text-sm py-2 px-4 sm:px-5"
+            >
+              Get Started
+            </button>
+          </nav>
         </div>
-        <nav className="flex items-center gap-4">
-          <button onClick={() => setAuthModal('login')}
-            className="text-gray-300 hover:text-white text-sm transition-colors px-3 py-1.5 rounded-lg hover:bg-white/10">
-            Sign In
-          </button>
-          <button onClick={() => setAuthModal('register')} className="btn-primary text-sm py-2 px-5">
-            Get Started
-          </button>
-        </nav>
       </header>
 
       {/* ── Hero: full-screen crossfade carousel ──────────────────────────── */}
-      <section className="relative h-screen flex items-center overflow-hidden">
+      <section className="relative min-h-[100vh] flex items-center overflow-hidden pt-16 sm:pt-20">
 
         {/* Previous backdrop (fades out) */}
         {prev?.backdrop_path && (
@@ -229,24 +237,26 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-dark-100/90 via-dark-100/40 to-transparent" />
 
         {/* Hero text — fades with backdrop */}
-        <div className="relative z-10 max-w-3xl px-8 md:px-16"
+        <div className="relative z-10 max-w-3xl px-4 sm:px-6 md:px-16"
           style={{ opacity: fading ? 0.4 : 1, transition: 'opacity 0.5s ease-in-out' }}>
           <div className="badge bg-primary/30 text-primary border border-primary/40 mb-5 text-sm px-4 py-1.5 w-fit">
             🎬 AI-Powered Movie Recommendations
           </div>
-          <h1 className="text-5xl md:text-7xl font-black leading-[1.07] mb-6 tracking-tight">
-            Your next<br />
-            <span className="text-gradient">favourite film</span><br />
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[1.07] mb-6 tracking-tight">
+            Your next
+            <br className="hidden sm:block" />
+            <span className="text-gradient">favourite film</span>
+            <br className="hidden sm:block" />
             is one click away.
           </h1>
-          <p className="text-gray-300 text-lg md:text-xl mb-8 max-w-xl leading-relaxed">
+          <p className="text-gray-300 text-base sm:text-lg md:text-xl mb-6 sm:mb-8 max-w-xl leading-relaxed">
             Discover movies, TV shows and anime tailored to your taste. Chat with our AI, rate what you've watched, and let the algorithm do the rest.
           </p>
-          <div className="flex gap-4 flex-wrap">
-            <button onClick={() => setAuthModal('register')} className="btn-primary text-base px-8 py-3.5 shadow-lg shadow-primary/30">
+          <div className="flex gap-3 sm:gap-4 flex-wrap">
+            <button onClick={() => setAuthModal('register')} className="btn-primary text-sm sm:text-base px-6 sm:px-8 py-3.5 shadow-lg shadow-primary/30">
               Start for Free →
             </button>
-            <button onClick={() => setAuthModal('login')} className="btn-ghost text-base px-8 py-3.5">
+            <button onClick={() => setAuthModal('login')} className="btn-ghost text-sm sm:text-base px-6 sm:px-8 py-3.5">
               Sign In
             </button>
           </div>
@@ -256,17 +266,17 @@ export default function LandingPage() {
         {trending.length > 1 && (
           <>
             <button onClick={prevHero}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20
+              className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20
                 w-11 h-11 rounded-full bg-black/50 hover:bg-primary/70 backdrop-blur-sm
-                flex items-center justify-center transition-all duration-200 hover:scale-110">
+                items-center justify-center transition-all duration-200 hover:scale-110">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <button onClick={nextHero}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20
+              className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-20
                 w-11 h-11 rounded-full bg-black/50 hover:bg-primary/70 backdrop-blur-sm
-                flex items-center justify-center transition-all duration-200 hover:scale-110">
+                items-center justify-center transition-all duration-200 hover:scale-110">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -276,7 +286,7 @@ export default function LandingPage() {
 
         {/* Dot navigation */}
         {trending.length > 1 && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2 items-center">
+          <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2 items-center">
             {trending.slice(0, HERO_ITEMS).map((_, i) => (
               <button key={i}
                 onClick={() => { clearInterval(heroTimer.current); goToHero(i) }}
@@ -292,7 +302,7 @@ export default function LandingPage() {
 
         {/* Currently trending chip */}
         {hero?.poster_path && (
-          <div className="absolute bottom-8 right-8 z-20 glass rounded-2xl p-3 max-w-[13rem]
+          <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-8 z-20 glass rounded-2xl p-3 max-w-[13rem]
             border border-white/10 shadow-xl"
             style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.5s ease-in-out' }}>
             <p className="text-[9px] text-gray-500 uppercase tracking-widest mb-2">Now Trending</p>
@@ -314,12 +324,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── Trending Grid ─────────────────────────────────────────────────── */}
-      <section className="px-8 py-14 -mt-16 relative z-10">
+      <section className="px-4 sm:px-6 lg:px-8 py-12 sm:py-14 -mt-10 sm:-mt-16 relative z-10">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <span className="w-1 h-6 bg-primary rounded-full" />
           Trending Right Now
         </h2>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
           {gridItems.map(m => (
             <button key={m.id} onClick={() => setAuthModal('register')}
               className="group text-left cursor-pointer">
@@ -357,11 +367,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ──────────────────────────────────────────────────────── */}
-      <section className="px-8 py-16">
+      <section className="px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-black text-center mb-2">Everything you need to find your next watch</h2>
-          <p className="text-gray-500 text-center mb-12 text-sm">Powered by TMDB data and OpenRouter AI</p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <h2 className="text-2xl sm:text-3xl font-black text-center mb-2">Everything you need to find your next watch</h2>
+          <p className="text-gray-500 text-center mb-10 sm:mb-12 text-sm">Powered by TMDB data and OpenRouter AI</p>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6">
             {FEATURES.map(f => (
               <div key={f.title} className="card p-6 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
                 <div className="text-4xl mb-4">{f.icon}</div>
@@ -374,21 +384,21 @@ export default function LandingPage() {
       </section>
 
       {/* ── Final CTA ─────────────────────────────────────────────────────── */}
-      <section className="px-8 py-20 text-center">
-        <div className="max-w-xl mx-auto glass rounded-3xl p-12 border border-white/10">
-          <h2 className="text-3xl font-black mb-3">Ready to start watching smarter?</h2>
-          <p className="text-gray-400 mb-8 text-sm">Free forever. No credit card required.</p>
-          <button onClick={() => setAuthModal('register')} className="btn-primary text-base px-10 py-3 shadow-lg shadow-primary/30">
+      <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
+        <div className="max-w-xl mx-auto glass rounded-3xl p-8 sm:p-10 lg:p-12 border border-white/10">
+          <h2 className="text-2xl sm:text-3xl font-black mb-3">Ready to start watching smarter?</h2>
+          <p className="text-gray-400 mb-7 sm:mb-8 text-sm">Free forever. No credit card required.</p>
+          <button onClick={() => setAuthModal('register')} className="btn-primary text-sm sm:text-base px-8 sm:px-10 py-3 shadow-lg shadow-primary/30">
             Create Your Account →
           </button>
         </div>
       </section>
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 px-8 py-6 flex items-center justify-between text-gray-600 text-xs">
+      <footer className="border-t border-white/5 px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-gray-600 text-[11px] sm:text-xs">
         <span className="font-black text-gradient text-sm">CineMatch</span>
-        <span>Powered by TMDB · OpenRouter · Supabase</span>
-        <div className="flex gap-4">
+        <span className="text-center sm:text-left">Powered by TMDB · OpenRouter · Supabase</span>
+        <div className="flex gap-3 sm:gap-4">
           <button onClick={() => setAuthModal('login')} className="hover:text-gray-300 transition-colors">Sign In</button>
           <button onClick={() => setAuthModal('register')} className="hover:text-gray-300 transition-colors">Register</button>
         </div>
