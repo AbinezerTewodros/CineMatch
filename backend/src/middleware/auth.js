@@ -1,6 +1,7 @@
-const jwt = require('jsonwebtoken');
+const jwt  = require('jsonwebtoken');
+const pool = require('../config/db');
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -11,7 +12,19 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    // Check ban status on every request (lightweight check)
+    const { rows } = await pool.query(
+      'SELECT id, is_banned, is_admin FROM users WHERE id = $1',
+      [decoded.id]
+    );
+
+    if (!rows[0]) return res.status(401).json({ error: 'User not found' });
+    if (rows[0].is_banned) {
+      return res.status(403).json({ error: 'Account suspended. Contact support.' });
+    }
+
+    req.user = { ...decoded, is_admin: rows[0].is_admin };
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });

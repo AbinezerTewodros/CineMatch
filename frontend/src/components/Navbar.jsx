@@ -252,6 +252,7 @@ export default function Navbar() {
                 { icon: '🔐', label: 'Change Password',  action: () => navigate('/profile?section=password') },
                 { icon: '🎯', label: 'My Preferences',   action: () => navigate('/recommendations')          },
                 { icon: '📚', label: 'My Library',       action: () => navigate('/dashboard')                },
+                ...(user?.is_admin ? [{ icon: '🛡️', label: 'Admin Panel', action: () => navigate('/admin') }] : []),
               ].map(item => (
                 <button key={item.label}
                   onClick={() => { item.action(); setProfileOpen(false) }}

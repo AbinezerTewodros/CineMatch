@@ -9,6 +9,7 @@ import MovieDetailPage     from './pages/MovieDetailPage'
 import PersonPage          from './pages/PersonPage'
 import ProfilePage         from './pages/ProfilePage'
 import DashboardPage       from './pages/DashboardPage'
+import AdminDashboard      from './pages/AdminDashboard'
 import Layout              from './components/Layout'
 
 // Redirect logged-in users away from /login and /register
@@ -21,6 +22,14 @@ const PublicRoute = ({ children }) => {
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth()
   return user ? children : <Navigate to="/login" replace />
+}
+
+// Redirect non-admins away from admin pages
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (!user.is_admin) return <Navigate to="/discover" replace />
+  return children
 }
 
 const AppRoutes = () => (
@@ -38,6 +47,7 @@ const AppRoutes = () => (
       <Route path="/person/:id"      element={<PersonPage />} />
       <Route path="/profile"         element={<ProfilePage />} />
       <Route path="/dashboard"       element={<DashboardPage />} />
+      <Route path="/admin"           element={<AdminRoute><AdminDashboard /></AdminRoute>} />
     </Route>
 
     {/* Fallback */}
