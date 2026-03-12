@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import axios from 'axios'
+import api from '../lib/api'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -143,8 +143,12 @@ export default function LandingPage() {
   const HERO_ITEMS                = 8
 
   useEffect(() => {
-    axios.get('/api/recommendations/trending?limit=20')
-      .then(r => setTrending(r.data)).catch(console.error)
+    api.get('/recommendations/trending?limit=20')
+      .then(r => {
+        const data = r.data
+        setTrending(Array.isArray(data) ? data : data?.results || data?.movies || [])
+      })
+      .catch(console.error)
   }, [])
 
   // Navigate hero with smooth crossfade

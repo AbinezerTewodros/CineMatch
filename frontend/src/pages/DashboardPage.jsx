@@ -104,7 +104,6 @@ export default function DashboardPage() {
                 {watchlist.map(m => (
                   <MovieCard key={m.id} movie={m} onWatchlist={removeFromWatchlist} mode="remove" />
                 ))}
-                ))}
               </div>
             )
           )}
